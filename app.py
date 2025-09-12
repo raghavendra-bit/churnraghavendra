@@ -1,66 +1,74 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import numpy as np
 
-# Load the saved model and scaler
-model = joblib.load('churn_model.pkl')
-scaler = joblib.load('scaler.pkl')
+# Load the trained pipeline
+model_pipeline = joblib.load('churn_model.pkl')
 
-# App title and description
-st.title("Telecom Churn Prediction App")
+st.title("Telecom Customer Churn Prediction")
+
 st.write("""
-This app predicts whether a telecom customer will churn using a logistic regression model.
-Enter the customer details below. (Built using the churn-bigml dataset.)
+Enter the customer details below to predict whether they are likely to churn.
 """)
 
-# Input fields for features (based on your dataset)
-st.header("Customer Details")
-account_length = st.number_input("Account Length (months)", min_value=1, max_value=300, value=100)
-total_day_minutes = st.number_input("Total Day Minutes", min_value=0.0, max_value=400.0, value=180.0)
+# --- User inputs ---
+state = st.selectbox("State", ["KS", "OH", "NJ", "CA", "WA"])  # Example states
+account_length = st.number_input("Account Length", min_value=0, max_value=500, value=100)
+area_code = st.selectbox("Area Code", [408, 415, 510])
+international_plan = st.selectbox("International Plan", ["yes", "no"])
+voice_mail_plan = st.selectbox("Voice Mail Plan", ["yes", "no"])
+number_vmail_messages = st.number_input("Number of Voice Mail Messages", min_value=0, max_value=50, value=5)
+
+# Minutes & Calls
+total_day_minutes = st.number_input("Total Day Minutes", min_value=0.0, max_value=400.0, value=200.0)
 total_day_calls = st.number_input("Total Day Calls", min_value=0, max_value=200, value=100)
-total_day_charge = st.number_input("Total Day Charge ($)", min_value=0.0, max_value=100.0, value=30.0)
+
 total_eve_minutes = st.number_input("Total Evening Minutes", min_value=0.0, max_value=400.0, value=200.0)
 total_eve_calls = st.number_input("Total Evening Calls", min_value=0, max_value=200, value=100)
-total_eve_charge = st.number_input("Total Evening Charge ($)", min_value=0.0, max_value=100.0, value=17.0)
+
 total_night_minutes = st.number_input("Total Night Minutes", min_value=0.0, max_value=400.0, value=200.0)
 total_night_calls = st.number_input("Total Night Calls", min_value=0, max_value=200, value=100)
-total_night_charge = st.number_input("Total Night Charge ($)", min_value=0.0, max_value=100.0, value=9.0)
+
 total_intl_minutes = st.number_input("Total International Minutes", min_value=0.0, max_value=50.0, value=10.0)
-total_intl_calls = st.number_input("Total International Calls", min_value=0, max_value=20, value=3)
-total_intl_charge = st.number_input("Total International Charge ($)", min_value=0.0, max_value=20.0, value=2.7)
-customer_service_calls = st.number_input("Customer Service Calls", min_value=0, max_value=10, value=1)
-international_plan = st.selectbox("International Plan", ["No", "Yes"])
-voice_mail_plan = st.selectbox("Voice Mail Plan", ["No", "Yes"])
-number_vmail_messages = st.number_input("Number of Voicemail Messages", min_value=0, max_value=100, value=0)
+total_intl_calls = st.number_input("Total International Calls", min_value=0, max_value=20, value=5)
 
-# Encode categorical variables
-international_plan_encoded = 1 if international_plan == "Yes" else 0
-voice_mail_plan_encoded = 1 if voice_mail_plan == "Yes" else 0
+customer_service_calls = st.number_input("Customer Service Calls", min_value=0, max_value=20, value=1)
 
-# Note: Excluding 'State' and 'Area Code' assuming they weren't used in the final model.
-# If they were, add encoding (e.g., one-hot encoding) here.
+# --- Auto-calculated charges ---
+total_day_charge = round(total_day_minutes * 0.17, 2)
+total_eve_charge = round(total_eve_minutes * 0.085, 2)
+total_night_charge = round(total_night_minutes * 0.045, 2)
+total_intl_charge = round(total_intl_minutes * 0.27, 2)
 
-# Prepare input data for prediction
-input_data = np.array([[
-    account_length, total_day_minutes, total_day_calls, total_day_charge,
-    total_eve_minutes, total_eve_calls, total_eve_charge, total_night_minutes,
-    total_night_calls, total_night_charge, total_intl_minutes, total_intl_calls,
-    total_intl_charge, customer_service_calls, international_plan_encoded,
-    voice_mail_plan_encoded, number_vmail_messages
-]])
+# Collect inputs into DataFrame with ALL required columns
+user_input = pd.DataFrame({
+    "State": [state],
+    "Account length": [account_length],
+    "Area code": [area_code],
+    "International plan": [international_plan],
+    "Voice mail plan": [voice_mail_plan],
+    "Number vmail messages": [number_vmail_messages],
+    "Total day minutes": [total_day_minutes],
+    "Total day calls": [total_day_calls],
+    "Total day charge": [total_day_charge],
+    "Total eve minutes": [total_eve_minutes],
+    "Total eve calls": [total_eve_calls],
+    "Total eve charge": [total_eve_charge],
+    "Total night minutes": [total_night_minutes],
+    "Total night calls": [total_night_calls],
+    "Total night charge": [total_night_charge],
+    "Total intl minutes": [total_intl_minutes],
+    "Total intl calls": [total_intl_calls],
+    "Total intl charge": [total_intl_charge],
+    "Customer service calls": [customer_service_calls]
+})
 
-# Scale the input data
-input_data_scaled = scaler.transform(input_data)
-
-# Predict button
+# --- Prediction ---
 if st.button("Predict Churn"):
-    prediction = model.predict(input_data_scaled)
-    if prediction[0] == 1:
-        st.error("[1] The customer is predicted to churn.")
-    else:
-        st.success("[0] The customer is predicted to not churn.")
+    prediction = model_pipeline.predict(user_input)
+    probability = model_pipeline.predict_proba(user_input)
 
-# Display model performance (from notebook)
-st.header("Model Performance")
-st.write("The logistic regression model has an AUC-ROC score of approximately 0.834 (from the training notebook).")
+    if prediction[0] == 1:
+        st.error(f"The customer is likely to churn! (Probability: {probability[0][1]:.2f})")
+    else:
+        st.success(f"The customer is not likely to churn. (Probability: {probability[0][1]:.2f})")
