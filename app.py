@@ -12,7 +12,13 @@ Enter the customer details below to predict whether they are likely to churn.
 """)
 
 # --- User inputs ---
-state = st.selectbox("State", ["KS", "OH", "NJ", "CA", "WA"])  # Example states
+state = st.selectbox("State", ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+    "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan",
+    "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+    "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir", "Ladakh",
+    "Puducherry", "Chandigarh", "Andaman & Nicobar Islands", "Lakshadweep"])  # Example states
 account_length = st.number_input("Account Length", min_value=0, max_value=500, value=100)
 area_code = st.selectbox("Area Code", [408, 415, 510])
 international_plan = st.selectbox("International Plan", ["yes", "no"])
