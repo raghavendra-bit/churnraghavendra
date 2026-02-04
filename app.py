@@ -74,8 +74,8 @@ if st.button("Predict Churn"):
     prediction = model_pipeline.predict(user_input)
     probability = model_pipeline.predict_proba(user_input)
 
-   if prediction[0] == 1:
-    st.write(f"❌ The customer is likely to churn. Probability: {probability[0][1]:.2f}")
-else:
-    st.write(f"✅ The customer is not likely to churn. Probability: {probability[0][1]:.2f}")
+    if prediction[0] == 1:
+        st.write(f"❌ The customer is likely to churn. Probability: {probability[0][1]:.2f}")
+    else:
+        st.write(f"✅ The customer is not likely to churn. Probability: {probability[0][1]:.2f}")
 
